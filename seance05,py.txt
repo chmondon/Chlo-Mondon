@@ -1,0 +1,81 @@
+#coding:utf8
+
+import pandas as pd
+import math
+import scipy
+import scipy.stats
+
+
+def ouvrirUnFichier(nom):
+    with open(nom, "r") as fichier:
+        contenu = pd.read_csv(fichier)
+    return contenu
+
+
+
+# =================================================================
+# 1. THÉORIE DE L'ÉCHANTILLONNAGE (Intervalles de fluctuation)
+# =================================================================
+print("--- 1. Résultat sur le calcul d'un intervalle de fluctuation ---")
+
+pop_reelle = ouvrirUnFichier("Echantillonnage-Population-reelle.csv")
+total_pop = pop_reelle.iloc[:, 0].sum()
+p_pour = pop_reelle.iloc[0, 0] / total_pop
+
+echantillons = ouvrirUnFichier("Echantillonnage-100-Echantillons.csv")
+n = 1000 
+
+marge_erreur_fluct = 1.96 * math.sqrt((p_pour * (1 - p_pour)) / n)
+inf_fluct = p_pour - marge_erreur_fluct
+sup_fluct = p_pour + marge_erreur_fluct
+
+print(f"Proportion réelle (p): {p_pour:.3f}")
+print(f"Intervalle de fluctuation (95%): [{inf_fluct:.3f} ; {sup_fluct:.3f}]")
+
+frequences_pour = echantillons['Pour'] / n
+hors_intervalle = echantillons[(frequences_pour < inf_fluct) | (frequences_pour > sup_fluct)]
+print(f"Nombre d'échantillons hors intervalle : {len(hors_intervalle)} / 100\n")
+
+
+# =================================================================
+# 2. THÉORIE DE L'ESTIMATION (Intervalles de confiance)
+# =================================================================
+print("--- 2. Résultat sur le calcul d'un intervalle de confiance ---")
+
+un_echantillon = echantillons.iloc[0]
+n_total_ech = un_echantillon.sum()
+
+for opinion in ['Pour', 'Contre', 'Sans opinion']:
+    f_obs = un_echantillon[opinion] / n_total_ech
+    marge_confiance = 1.96 * math.sqrt((f_obs * (1 - f_obs)) / n_total_ech)
+    IC_inf = f_obs - marge_confiance
+    IC_sup = f_obs + marge_confiance
+    
+    print(f"Opinion '{opinion}': Fréq = {f_obs:.3f}, IC 95% = [{IC_inf:.3f} ; {IC_sup:.3f}]")
+print("\n")
+
+
+
+
+
+
+# =================================================================
+# 3. THÉORIE DE LA DÉCISION (Tests d'hypothèse)
+# =================================================================
+print("--- 3. Théorie de la décision : Test de Shapiro-Wilk ---")
+
+test1 = ouvrirUnFichier("Loi-normale-Test-1.csv")
+test2 = ouvrirUnFichier("Loi-normale-Test-2.csv")
+
+
+stat1, p1 = stats.shapiro(test1['Test'])
+stat2, p2 = stats.shapiro(test2['Test'])
+
+print(f"Test 1 - p-value: {p1:.5f} -> {'Normale' if p1 > 0.05 else 'Non normale'}")
+print(f"Test 2 - p-value: {p2:.5e} -> {'Normale' if p2 > 0.05 else 'Non normale'}")
+
+# --- 2.3 BONUS : Quelle est la distribution de la loi non normale ? ---
+# En observant les données du Test 2 (beaucoup de 1, quelques valeurs élevées), 
+# cela ressemble à une loi de Poisson ou une loi Géométrique (loi de Pareto/Puissance).
+print("\n--- 2.3 Bonus ---")
+print("La distribution non normale (Test 2) semble suivre une loi de Poisson ou une loi de Pareto au vu de son asymétrie.")
