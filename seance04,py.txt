@@ -1,0 +1,123 @@
+# coding:utf8
+
+import os
+import numpy as np
+import pandas as pd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+
+# =========================
+# Création du dossier "images" si non existant
+# =========================
+output_dir = "images"
+os.makedirs(output_dir, exist_ok=True)
+
+# =========================
+# Liste des distributions
+# =========================
+dist_names = ['norm', 'beta', 'gamma', 'pareto', 't', 'lognorm', 'invgamma', 
+              'invgauss',  'loggamma', 'alpha', 'chi', 'chi2', 'bradford', 
+              'burr', 'burr12', 'cauchy', 'dweibull', 'erlang', 'expon', 
+              'exponnorm', 'exponweib', 'exponpow', 'f', 'genpareto', 
+              'gausshyper', 'gibrat', 'gompertz', 'gumbel_r', 'pareto', 
+              'pearson3', 'powerlaw', 'triang', 'weibull_min', 'weibull_max', 
+              'bernoulli', 'betabinom', 'betanbinom', 'binom', 'geom', 
+              'hypergeom', 'logser', 'nbinom', 'poisson', 'poisson_binom', 
+              'randint', 'zipf', 'zipfian']
+
+print(dist_names)
+
+# =========================
+# Fonction pour sauvegarder un graphique
+# =========================
+def save_plot(filename):
+    plt.savefig(os.path.join(output_dir, filename), bbox_inches='tight')
+    plt.close()
+
+# =========================
+# Visualisations
+# =========================
+
+# Loi de Dirac 
+x_dirac = np.arange(-2, 3)
+y_dirac = [0, 0, 1, 0, 0]
+plt.figure()
+plt.stem(x_dirac, y_dirac)
+plt.title("Loi de Dirac")
+save_plot("loi_dirac.png")
+
+# Loi uniforme discrète 
+low, high = 1, 7
+x_unif_d = np.arange(low, high)
+plt.figure()
+plt.stem(x_unif_d, stats.randint.pmf(x_unif_d, low, high))
+plt.title("Loi uniforme discrète")
+save_plot("loi_uniforme_discrete.png")
+
+# Loi binomiale 
+n_bin, p_bin = 10, 0.5
+x_binom = np.arange(0, n_bin + 1)
+plt.figure()
+plt.stem(x_binom, stats.binom.pmf(x_binom, n_bin, p_bin))
+plt.title("Loi binomiale")
+save_plot("loi_binomiale.png")
+
+# Loi de Poisson 
+mu_poi = 3
+x_poi = np.arange(0, 15)
+plt.figure()
+plt.stem(x_poi, stats.poisson.pmf(x_poi, mu_poi))
+plt.title("Loi de Poisson")
+save_plot("loi_poisson.png")
+
+# Loi normale 
+x_norm = np.linspace(-4, 4, 100)
+plt.figure()
+plt.plot(x_norm, stats.norm.pdf(x_norm, 0, 1))
+plt.title("Loi normale")
+save_plot("loi_normale.png")
+
+# Loi log-normale 
+s_log = 0.95
+x_log = np.linspace(0, 5, 100)
+plt.figure()
+plt.plot(x_log, stats.lognorm.pdf(x_log, s_log))
+plt.title("Loi log-normale")
+save_plot("loi_lognormale.png")
+
+# Loi uniforme continue 
+x_unif_c = np.linspace(-0.5, 1.5, 100)
+plt.figure()
+plt.plot(x_unif_c, stats.uniform.pdf(x_unif_c, 0, 1))
+plt.title("Loi uniforme continue")
+save_plot("loi_uniforme_continue.png")
+
+# Loi du Chi2 
+df_chi = 4
+x_chi = np.linspace(0, 15, 100)
+plt.figure()
+plt.plot(x_chi, stats.chi2.pdf(x_chi, df_chi))
+plt.title("Loi Chi2")
+save_plot("loi_chi2.png")
+
+# Loi de Pareto 
+b_par = 2.62
+x_par = np.linspace(1, 5, 100)
+plt.figure()
+plt.plot(x_par, stats.pareto.pdf(x_par, b_par))
+plt.title("Loi Pareto")
+save_plot("loi_pareto.png")
+
+# =========================
+# Moyenne et écart-type
+# =========================
+def calcul_moyenne_ecart_type(loi_scipy, *parametres):
+    m, v = loi_scipy.stats(*parametres, moments='mv')
+    return m, np.sqrt(v)
+
+# Exemple
+moy, std = calcul_moyenne_ecart_type(stats.norm, 0, 1)
+print(f"Normale - Moyenne: {moy}, Écart-type: {std}")
+
+moy_p, std_p = calcul_moyenne_ecart_type(stats.poisson, 3)
+print(f"Poisson - Moyenne: {moy_p}, Écart-type: {std_p}")
