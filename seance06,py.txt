@@ -1,0 +1,132 @@
+#coding:utf8
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy
+import scipy.stats
+import math
+
+#Fonction pour ouvrir les fichiers
+def ouvrirUnFichier(nom):
+    with open(nom, "r") as fichier:
+        contenu = pd.read_csv(fichier)
+    return contenu
+
+#Fonction pour convertir les données en données logarithmiques
+def conversionLog(liste):
+    log = []
+    for element in liste:
+        log.append(math.log(element))
+    return log
+
+#Fonction pour trier par ordre décroissant les listes (îles et populations)
+def ordreDecroissant(liste):
+    liste.sort(reverse = True)
+    return liste
+
+#Fonction pour obtenir le classement des listes spécifiques aux populations
+def ordrePopulation(pop, etat):
+    ordrepop = []
+    for element in range(0, len(pop)):
+        if np.isnan(pop[element]) == False:
+            ordrepop.append([float(pop[element]), etat[element]])
+    ordrepop = ordreDecroissant(ordrepop)
+    for element in range(0, len(ordrepop)):
+        ordrepop[element] = [element + 1, ordrepop[element][1]]
+    return ordrepop
+
+#Fonction pour obtenir l'ordre défini entre deux classements (listes spécifiques aux populations)
+def classementPays(ordre1, ordre2):
+    classement = []
+    if len(ordre1) <= len(ordre2):
+        for element1 in range(0, len(ordre2) - 1):
+            for element2 in range(0, len(ordre1) - 1):
+                if ordre2[element1][1] == ordre1[element2][1]:
+                    classement.append([ordre1[element2][0], ordre2[element1][0], ordre1[element2][1]])
+    else:
+        for element1 in range(0, len(ordre1) - 1):
+            for element2 in range(0, len(ordre2) - 1):
+                if ordre2[element2][1] == ordre1[element1][1]:
+                    classement.append([ordre1[element1][0], ordre2[element2][0], ordre1[element][1]])
+    return classement
+
+#Partie sur les îles
+
+print("--- Analyse des Îles ---")
+
+# 1 & 2. Ouverture du fichier [cite: 28, 30]
+iles = ouvrirUnFichier("./data/island-index.csv")
+
+# 3. Isolation de la colonne Surface et ajout des continents [cite: 32, 33, 34, 35, 36]
+surfaces = list(iles["Surface (km²)"])
+# Ajout des valeurs en forçant le type float [cite: 37, 38]
+surfaces.extend([float(85545323), float(37856841), float(7768030), float(7605049)])
+
+# 4. Ordonner la liste [cite: 39]
+surfaces_ordonnees = ordreDecroissant(surfaces)
+
+# 5. Visualiser la loi rang-taille [cite: 40]
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+plt.plot(surfaces_ordonnees)
+plt.title("Loi rang-taille (linéaire)")
+
+# 6. Conversion Logarithmique [cite: 41, 42]
+log_surfaces = conversionLog(surfaces_ordonnees)
+log_rangs = conversionLog(range(1, len(log_surfaces) + 1))
+
+plt.subplot(1, 2, 2)
+plt.plot(log_rangs, log_surfaces)
+plt.title("Loi rang-taille (Log-Log)")
+plt.savefig("rang_taille_iles.png")
+print("Graphique généré : rang_taille_iles.png")
+
+# 7. Commentaire sur le test des rangs [cite: 43, 44]
+# "Oui, il est possible de faire un test sur les rangs (comme le test de Spearman) 
+# pour vérifier si la distribution des surfaces suit strictement une loi de puissance."
+
+
+
+
+#Partie sur les populations des États du monde
+#Source. Depuis 2007, tous les ans jusque 2025, M. Forriez a relevé l'intégralité du nombre d'habitants dans chaque États du monde proposé par un numéro hors-série du monde intitulé États du monde. Vous avez l'évolution de la population et de la densité par année.
+print("\n--- Analyse de la Population ---")
+
+# 8 & 9. Ouverture du fichier [cite: 45, 47]
+monde = ouvrirUnFichier("./data/Le-Monde-HS-Etats-du-monde-2007-2025.csv")
+
+# 10. Isolation des colonnes [cite: 49]
+etats = monde["État"]
+pop07 = monde["Pop 2007"]
+pop25 = monde["Pop 2025"]
+dens07 = monde["Densité 2007"]
+dens25 = monde["Densité 2025"]
+
+# 11. Classement des populations et densités [cite: 51]
+classement_pop07 = ordrePopulation(pop07, etats)
+classement_pop25 = ordrePopulation(pop25, etats)
+classement_dens07 = ordrePopulation(dens07, etats)
+classement_dens25 = ordrePopulation(dens25, etats)
+
+# 12. Préparation de la comparaison Population vs Densité (exemple sur 2007) [cite: 53]
+comparaison = classementPays(classement_pop07, classement_dens07)
+
+# 13. Isolation des colonnes via boucle [cite: 56]
+rangs_pop = []
+rangs_dens = []
+for ligne in comparaison:
+    rangs_pop.append(ligne[0])
+    rangs_dens.append(ligne[1])
+
+# 14. Calcul de Spearman et Kendall [cite: 57, 58]
+rho, p_spearman = stats.spearmanr(rangs_pop, rangs_dens)
+tau, p_kendall = stats.kendalltau(rangs_pop, rangs_dens)
+
+print(f"Coeff. Spearman (Pop vs Dens 2007): {rho:.3f}")
+print(f"Coeff. Kendall (Pop vs Dens 2007): {tau:.3f}")
+
+# Commentaire final[cite: 59]: 
+# Une valeur faible de corrélation indique que les pays les plus peuplés 
+# ne sont pas forcément les plus denses (ex: Chine vs micro-États).
+
